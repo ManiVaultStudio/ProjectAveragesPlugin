@@ -44,7 +44,8 @@ public:
     void init() override;
 
     void mapAveragesToScalars();
-
+    bool checkValidity();
+    void triggerMapping();
     /**
      * Invoked when a points data event occurs
      * @param dataEvent Data event which occurred
@@ -68,8 +69,6 @@ private:
     SettingsAction      _settingsAction;    /** The place where settings are stored (more info in SettingsAction.h) */
     std::vector<float>  _mappedScalars; 
     Dataset<Points> _positionDataset;
-    Dataset<Points> _averageDataset;       /** The dataset that is used for mapping the averages to points*/
-    Dataset<Clusters>   _labelDataset;         /** label dataset for embedding dataset */
     std::vector<QString> _labelsInAverages; // same order as the average rows
 };
 

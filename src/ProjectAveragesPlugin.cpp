@@ -25,28 +25,161 @@ void ProjectAveragesPlugin::init()
     // initialize an output dataset
     setOutputDataset(mv::data().createDerivedDataset("Mapped dataset", getInputDataset(), getInputDataset()));
 
-    // get the averages dataset that is used for mapping the averages to the points dataset
-    for (const auto& data : mv::data().getAllDatasets())
+	/*auto positionDatasetChildren = _positionDataset->getChildren();
+    Datasets validChildren;
+    for (const auto& child : positionDatasetChildren)
     {
-        //qDebug() << data->getGuiName();
-        if (data->getGuiName() == "marm_Cluster_v4_metacell") {// TODO: generize this to work with any selected data
-            qDebug() << "Found average dataset: " << data->getGuiName();
-            _averageDataset = data;
-            break;      
+        if (child->getDataType() == ClusterType)
+        {
+            validChildren.append(child);
         }
+	}
+	_settingsAction.getPositionClusterDatasetPickerAction().setDatasets(validChildren);*/
+
+    const auto triggerUpdate = [this]() {triggerMapping(); };
+    connect(&_settingsAction.getUpdateTriggerAction(), &TriggerAction::triggered, this, triggerUpdate);
+
+
+    const auto updateAverageDatasetPickerAction = [this]() {
+        
+        if (_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid())
+        {
+			_settingsAction.getAveragesPointDatasetDimensionsPickerAction().setPointsDataset(_settingsAction.getAverageDatasetPickerAction().getCurrentDataset());
+        }
+        bool validity = checkValidity();
+        
+        
+        if (validity)
+        {
+            if (_settingsAction.getAutoUpdateAction().isChecked())
+            {
+                triggerMapping();
+            }
+            
+        }
+
+        };
+    connect(&_settingsAction.getAverageDatasetPickerAction(), &DatasetPickerAction::currentIndexChanged, this, updateAverageDatasetPickerAction);
+
+    const auto updateAveragesClusterDatasetPickerAction = [this]() {
+        bool validity = checkValidity();
+        if (validity)
+        {
+            if (_settingsAction.getAutoUpdateAction().isChecked())
+            {
+                triggerMapping();
+            }
+
+        }
+        };
+    connect(&_settingsAction.getAveragesClusterDatasetPickerAction(), &DatasetPickerAction::currentIndexChanged, this, updateAveragesClusterDatasetPickerAction);
+
+    const auto updatePositionClusterDatasetPickerAction = [this]() {
+        bool validity = checkValidity();
+        if (validity)
+        {
+            if (_settingsAction.getAutoUpdateAction().isChecked())
+            {
+                triggerMapping();
+            }
+
+        }
+        };
+    connect(&_settingsAction.getPositionClusterDatasetPickerAction(), &DatasetPickerAction::currentIndexChanged, this, updatePositionClusterDatasetPickerAction);
+
+    const auto updateAveragesPointDatasetDimensionsPickerAction = [this]() {
+        bool validity = checkValidity();
+        if (validity)
+        {
+            if (_settingsAction.getAutoUpdateAction().isChecked())
+            {
+                triggerMapping();
+            }
+
+        }
+        };
+    connect(&_settingsAction.getAveragesPointDatasetDimensionsPickerAction(), &DimensionPickerAction::currentDimensionIndexChanged, this, updateAveragesPointDatasetDimensionsPickerAction);
+
+    bool validity=checkValidity();
+
+    getOutputDataset()->addAction(_settingsAction);
+    
+}
+
+bool ProjectAveragesPlugin::checkValidity()
+{
+    if (!_positionDataset.isValid() || !_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset().isValid() || _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex() >= 0)
+    {
+        _settingsAction.getUpdateTriggerAction().setDisabled(true);
+		return false;
+    }
+    else
+    {
+        _settingsAction.getUpdateTriggerAction().setEnabled(true);
+		return true;
+	}
+}
+
+void ProjectAveragesPlugin::triggerMapping()
+{
+    if (!_positionDataset.isValid() || !_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset().isValid() || _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex()>=0)
+    {
+        qDebug() << "Position dataset or average dataset is not set or invalid";
+		return;
+    }
+    else
+    {
+        mapAveragesToScalars();
+    }
+}
+
+void ProjectAveragesPlugin::mapAveragesToScalars()
+{
+
+    Dataset<Points> averageDataset = _settingsAction.getAverageDatasetPickerAction().getCurrentDataset();
+    if (!averageDataset.isValid())
+    {
+                qDebug() << "Average dataset is not set or invalid";
+				return;
+    }
+    Dataset<Clusters> labelDatasetForAverages = _settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset();
+    if (!labelDatasetForAverages.isValid())
+    {
+        qDebug() << "Label dataset for averages is not set or invalid";
+        return;
     }
 
-    // store the labels of average dataset in  a vector
-    _labelsInAverages.resize(_averageDataset->getNumPoints());
-    Dataset<Clusters> labelDatasetForAverages;
-    for (const auto& data : mv::data().getAllDatasets()) // TODO: generize this to work with any selected data
+    Dataset<Clusters> labelDataset = _settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset();
+    if (!labelDataset.isValid())
     {
-        if (data->getGuiName() == "cell_type") { 
-            labelDatasetForAverages = data;
-            qDebug() << "Found label dataset fo raverages: " << labelDatasetForAverages->getGuiName();
-            break;
-        }
+        qDebug() << "Label dataset for positions is not set or invalid";
+        return;
     }
+    int averageDatasetSelectedDimension = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex();
+    if (averageDatasetSelectedDimension < 0 || averageDatasetSelectedDimension >= averageDataset->getNumDimensions())
+    {
+        qDebug() << "Selected dimension index is out of bounds for the average dataset";
+        return;
+	}
+
+
+    auto& datasetTask = getOutputDataset()->getTask();
+
+
+    datasetTask.setName("Mapping averages");
+
+
+    datasetTask.setRunning();
+
+
+    datasetTask.setProgress(0.0f);
+
+
+
+    // store the labels of average dataset in  a vector
+    _labelsInAverages.resize(averageDataset->getNumPoints());
+
+
     const QVector<Cluster>& labelClustersInAverages = labelDatasetForAverages->getClusters();
     for (int i = 0; i < labelClustersInAverages.size(); ++i)
     {
@@ -57,41 +190,16 @@ void ProjectAveragesPlugin::init()
             _labelsInAverages[ptIndex] = cluster.getName();
         }
     }
-
-
-    // load the cluster data of the position dataset
-    for (const auto& data : mv::data().getAllDatasets()) // TODO: generize this to work with any selected data
-    {
-        if (data->getGuiName() == "CDM_Cluster_label") {
-            _labelDataset = data;
-            qDebug() << "Found label dataset: " << _labelDataset->getGuiName();
-            break;
-        }
-    }
-
-    mapAveragesToScalars();
-    
-}
-
-void ProjectAveragesPlugin::mapAveragesToScalars()
-{
-    // Check if the average dataset is valid
-    if (!_averageDataset.isValid()) 
-    {
-        qDebug() << "Average dataset is not set";
-        return;
-    }
-
     _mappedScalars.resize(_positionDataset->getNumPoints(), 0.0f);
 
     std::vector<float> averagesForSelectedDimension;
-    _averageDataset->extractDataForDimension(averagesForSelectedDimension, 777); // TODO: here dimension index should be defined by user
-    qDebug() << "test dim " << _averageDataset->getDimensionNames()[777];
+    averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension); 
+    qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
     const int numPoints = _positionDataset->getNumPoints();
 
     // Iterate over the points in the position dataset
-    const QVector<Cluster>& labelClusters = _labelDataset->getClusters();
+    const QVector<Cluster>& labelClusters = labelDataset->getClusters();
 
     for (int i = 0; i < averagesForSelectedDimension.size(); ++i) {
 
@@ -102,7 +210,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         if (clusterNameInAverage.startsWith("cluster_")) {
             clusterNameInAverage = clusterNameInAverage.mid(8);
         }
-        
+
         bool found = false;
 
         //search for the cluster name in labelClusters
@@ -124,11 +232,16 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         }
     }
 
-  
+
     // Update the output dataset with the mapped scalars
     getOutputDataset<Points>()->setData<float>(_mappedScalars.data(), _mappedScalars.size(), 1);
     events().notifyDatasetDataChanged(getOutputDataset<Points>());
+    datasetTask.setProgressDescription("Finalizing");
+    datasetTask.setProgress(100.0f);
+    datasetTask.setFinished();
 }
+
+
 
 void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 {
