@@ -74,9 +74,7 @@ private:
 };
 
 /**
- * Example analysis plugin factory class
- *
- * Note: Factory does not need to be altered (merely responsible for generating new plugins when requested)
+ * Project averages plugin factory class
  */
 class ProjectAveragesPluginFactory : public AnalysisPluginFactory
 {

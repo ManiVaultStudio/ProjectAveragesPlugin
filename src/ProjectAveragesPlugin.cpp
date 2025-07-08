@@ -1,8 +1,5 @@
 #include "ProjectAveragesPlugin.h"
 
-#include "PointData/PointData.h"
-#include "ClusterData/ClusterData.h"
-
 #include <event/Event.h>
 
 #include <QtCore>
@@ -99,9 +96,9 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     for (int i = 0; i < averagesForSelectedDimension.size(); ++i) {
 
         QString clusterNameInAverage = _labelsInAverages[i];
-        qDebug() << "clusterNameInAverage: " << clusterNameInAverage;
+        //qDebug() << "clusterNameInAverage: " << clusterNameInAverage;
 
-        // hard-coded to remove "cluster_" prefix in clusterName
+        // hard-coded to remove "cluster_" prefix in clusterName TODO: generalize this
         if (clusterNameInAverage.startsWith("cluster_")) {
             clusterNameInAverage = clusterNameInAverage.mid(8);
         }
