@@ -11,6 +11,13 @@ SettingsAction::SettingsAction(QObject* parent) :
     
 {
     setText("Settings");
+    setSerializationName("ProjectAveragesPlugin:Settings");
+	_averageDatasetPickerAction.setSerializationName("ProjectAveragesPlugin:AverageDatasetPickerAction");
+	_autoUpdateAction.setSerializationName("ProjectAveragesPlugin:AutoUpdateAction");
+	_averagesClusterDatasetPickerAction.setSerializationName("ProjectAveragesPlugin:AveragesClusterDatasetPickerAction");
+	_positionClusterDatasetPickerAction.setSerializationName("ProjectAveragesPlugin:PositionClusterDatasetPickerAction");
+	_averagesPointDatasetDimensionsPickerAction.setSerializationName("ProjectAveragesPlugin:AveragesPointDatasetDimensionsPickerAction");
+
 	
     _averageDatasetPickerAction.setFilterFunction([this](mv::Dataset<DatasetImpl> dataset) -> bool {
         return dataset->getDataType() == PointType;
@@ -34,4 +41,27 @@ SettingsAction::SettingsAction(QObject* parent) :
 	addAction(&_averagesPointDatasetDimensionsPickerAction);
 	addAction(&_autoUpdateAction);
     addAction(&_updateTriggerAction);
+}
+
+
+void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    WidgetAction::fromVariantMap(variantMap);
+    _averageDatasetPickerAction.fromParentVariantMap(variantMap);
+    _averagesClusterDatasetPickerAction.fromParentVariantMap(variantMap);
+    _positionClusterDatasetPickerAction.fromParentVariantMap(variantMap);
+    _averagesPointDatasetDimensionsPickerAction.fromParentVariantMap(variantMap);
+    _autoUpdateAction.fromParentVariantMap(variantMap);
+}
+
+QVariantMap SettingsAction::toVariantMap() const
+{
+    QVariantMap variantMap = WidgetAction::toVariantMap();
+    _averageDatasetPickerAction.insertIntoVariantMap(variantMap);
+    _averagesClusterDatasetPickerAction.insertIntoVariantMap(variantMap);
+    _positionClusterDatasetPickerAction.insertIntoVariantMap(variantMap);
+    _averagesPointDatasetDimensionsPickerAction.insertIntoVariantMap(variantMap);
+    _autoUpdateAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
 }
