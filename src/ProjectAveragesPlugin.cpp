@@ -23,7 +23,11 @@ void ProjectAveragesPlugin::init()
     _positionDataset = getInputDataset<Points>(); // this should be plotted as a 2D scatter plot 
 
     // initialize an output dataset
-    setOutputDataset(mv::data().createDerivedDataset("Mapped dataset", getInputDataset(), getInputDataset()));
+    if (!outputDataInit())
+    {
+        setOutputDataset(mv::data().createDerivedDataset("Mapped dataset", getInputDataset(), getInputDataset()));
+    }
+    
 
 	/*auto positionDatasetChildren = _positionDataset->getChildren();
     Datasets validChildren;
