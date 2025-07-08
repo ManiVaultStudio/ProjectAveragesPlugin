@@ -198,6 +198,25 @@ void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 }
 
 // =============================================================================
+// Serialization
+// =============================================================================
+
+void ProjectAveragesPlugin::fromVariantMap(const QVariantMap& variantMap)
+{
+    AnalysisPlugin::fromVariantMap(variantMap);
+}
+
+QVariantMap ProjectAveragesPlugin::toVariantMap() const
+{
+    QVariantMap variantMap = AnalysisPlugin::toVariantMap();
+
+    //_settingsAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}
+
+
+// =============================================================================
 // Plugin Factory 
 // =============================================================================
 
