@@ -314,13 +314,15 @@ void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 void ProjectAveragesPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
     AnalysisPlugin::fromVariantMap(variantMap);
+    mv::util::variantMapMustContain(variantMap, "ProjectAveragesPlugin:Settings");
+    _settingsAction.fromVariantMap(variantMap["ProjectAveragesPlugin:Settings"].toMap());
 }
 
 QVariantMap ProjectAveragesPlugin::toVariantMap() const
 {
     QVariantMap variantMap = AnalysisPlugin::toVariantMap();
 
-    //_settingsAction.insertIntoVariantMap(variantMap);
+    _settingsAction.insertIntoVariantMap(variantMap);
 
     return variantMap;
 }

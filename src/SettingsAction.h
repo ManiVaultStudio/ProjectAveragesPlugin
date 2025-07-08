@@ -29,7 +29,11 @@ public: // Action getters
 	DatasetPickerAction& getAveragesClusterDatasetPickerAction() { return _averagesClusterDatasetPickerAction; } // Getter for averages cluster dataset picker action
 	DatasetPickerAction& getPositionClusterDatasetPickerAction() { return _positionClusterDatasetPickerAction; } // Getter for position cluster dataset picker action
 	DimensionPickerAction& getAveragesPointDatasetDimensionsPickerAction() { return _averagesPointDatasetDimensionsPickerAction; } // Getter for averages point dataset dimensions picker action
-   
+
+public:
+	void fromVariantMap(const QVariantMap& variantMap) override;
+	QVariantMap toVariantMap() const override;
+
 
 public:
 	DatasetPickerAction  _averageDatasetPickerAction; // Dataset picker for averages point dataset
