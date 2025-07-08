@@ -108,7 +108,7 @@ void ProjectAveragesPlugin::init()
 
 bool ProjectAveragesPlugin::checkValidity()
 {
-    if (!_positionDataset.isValid() || !_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset().isValid() || _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex() >= 0)
+    if (!_positionDataset.isValid() || !_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset().isValid() || _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex() < 0)
     {
         _settingsAction.getUpdateTriggerAction().setDisabled(true);
 		return false;
@@ -122,7 +122,7 @@ bool ProjectAveragesPlugin::checkValidity()
 
 void ProjectAveragesPlugin::triggerMapping()
 {
-    if (!_positionDataset.isValid() || !_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset().isValid() || _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex()>=0)
+    if (!_positionDataset.isValid() || !_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset().isValid() || !_settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset().isValid() || _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex()<0)
     {
         qDebug() << "Position dataset or average dataset is not set or invalid";
 		return;
