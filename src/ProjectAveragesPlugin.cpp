@@ -211,9 +211,9 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         //qDebug() << "clusterNameInAverage: " << clusterNameInAverage;
 
         // hard-coded to remove "cluster_" prefix in clusterName TODO: generalize this
-        if (clusterNameInAverage.startsWith("cluster_")) {
+        /*if (clusterNameInAverage.startsWith("cluster_")) {
             clusterNameInAverage = clusterNameInAverage.mid(8);
-        }
+        }*/
 
         bool found = false;
 
@@ -223,12 +223,14 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
             QString clusterNameInEmbedding = cluster.getName();
 
             //qDebug() << "clusterNameInEmbedding: " << clusterNameInEmbedding;
-
+            //qDebug() << "Comparing: " << clusterNameInAverage << " vs " << clusterNameInEmbedding;
             if (clusterNameInAverage == clusterNameInEmbedding) {
                 const auto& ptIndices = cluster.getIndices();
                 for (int j = 0; j < ptIndices.size(); ++j) {
                     int ptIndex = ptIndices[j];
-                    _mappedScalars[ptIndex] = averagesForSelectedDimension[i];
+                    if (ptIndex >= 0 && ptIndex < _mappedScalars.size()) {
+                        _mappedScalars[ptIndex] = averagesForSelectedDimension[i];
+                    }
                 }
                 found = true;
                 break;
