@@ -10,30 +10,7 @@ Q_PLUGIN_METADATA(IID "studio.manivault.ProjectAveragesPlugin")
 using namespace mv;
 using namespace mv::plugin;
 
-bool compareNumbersInStrings(const QString& a, const QString& b)
-{
-    auto extractNumbers = [](const QString& str) -> QStringList {
-        QRegularExpression re("\\d+");
-        QStringList numbers;
-        auto it = re.globalMatch(str);
-        while (it.hasNext()) {
-            numbers << it.next().captured();
-        }
-        return numbers;
-        };
 
-    QStringList numbersA = extractNumbers(a);
-    QStringList numbersB = extractNumbers(b);
-
-    // If both have no numbers, consider them not equal
-    if (numbersA.isEmpty() && numbersB.isEmpty())
-        return false;
-
-    // Compare as sets (order doesn't matter)
-    QSet<QString> setA = QSet<QString>(numbersA.begin(), numbersA.end());
-    QSet<QString> setB = QSet<QString>(numbersB.begin(), numbersB.end());
-    return setA == setB;
-}
 
 ProjectAveragesPlugin::ProjectAveragesPlugin(const PluginFactory* factory) :
     AnalysisPlugin(factory)
@@ -247,7 +224,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
 
             //qDebug() << "clusterNameInEmbedding: " << clusterNameInEmbedding;
             //qDebug() << "Comparing: " << clusterNameInAverage << " vs " << clusterNameInEmbedding;
-            if (clusterNameInAverage == clusterNameInEmbedding)  //can also use if (compareNumbersInStrings(clusterNameInAverage, clusterNameInEmbedding))
+            if (clusterNameInAverage == clusterNameInEmbedding) 
             {
                 const auto& ptIndices = cluster.getIndices();
                 for (int j = 0; j < ptIndices.size(); ++j) {
@@ -270,7 +247,6 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     datasetTask.setProgress(100.0f);
     datasetTask.setFinished();
 }
-
 
 
 void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
