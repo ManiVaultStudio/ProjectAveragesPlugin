@@ -2,12 +2,12 @@
 
 SettingsAction::SettingsAction(QObject* parent) :
     GroupAction(parent, "SettingsAction", true),
-    _averageDatasetPickerAction(this,"Averages Point Dataset Picker Action"),
+    _averageDatasetPickerAction(this,"Averages Point Dataset"),
 	_autoUpdateAction(this, "Auto Update Action"),
 	_updateTriggerAction(this, "Update Trigger Action"),
-	_averagesClusterDatasetPickerAction(this, "Averages Cluster Dataset Picker Action"),
-	_positionClusterDatasetPickerAction(this, "Position Cluster Dataset Picker Action"),
-	_averagesPointDatasetDimensionsPickerAction(this, "Averages Point Dataset Dimensions Picker Action")
+	_averagesClusterDatasetPickerAction(this, "Averages Cluster Dataset"),
+	_positionClusterDatasetPickerAction(this, "Position Cluster Dataset"),
+	_averagesPointDatasetDimensionsPickerAction(this, "Averages Dataset Dimension")
     
 {
     setText("Settings");
