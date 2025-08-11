@@ -9,7 +9,7 @@
 #include <Dataset.h>
 #include <PointData/PointData.h>
 #include <ClusterData/ClusterData.h>
-
+#include <QRegularExpression>
 #include <QRandomGenerator>
 #include <QtMath>
 
