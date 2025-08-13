@@ -243,6 +243,12 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     // Update the output dataset with the mapped scalars
     getOutputDataset<Points>()->setData<float>(_mappedScalars.data(), _mappedScalars.size(), 1);
     events().notifyDatasetDataChanged(getOutputDataset<Points>());
+    QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
+    if (geneName.isEmpty())
+    {
+        getOutputDataset<Points>()->setDimensionNames({ geneName });
+        events().notifyDatasetDataDimensionsChanged(getOutputDataset<Points>());
+    }
     datasetTask.setProgressDescription("Finalizing");
     datasetTask.setProgress(100.0f);
     datasetTask.setFinished();
