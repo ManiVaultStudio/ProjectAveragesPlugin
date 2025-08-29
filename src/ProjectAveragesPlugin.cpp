@@ -1,6 +1,7 @@
 #include "ProjectAveragesPlugin.h"
 
 #include <event/Event.h>
+#include <PointData/InfoAction.h>
 
 #include <QtCore>
 #include <QDebug>
@@ -25,7 +26,7 @@ void ProjectAveragesPlugin::init()
     // initialize an output dataset
     if (!outputDataInit())
     {
-        setOutputDataset(mv::data().createDerivedDataset("Mapped dataset", getInputDataset(), getInputDataset()));
+        setOutputDataset(Dataset<Points>(mv::data().createDerivedDataset("Mapped dataset", getInputDataset(), getInputDataset())));
     }
     
 
@@ -107,6 +108,9 @@ void ProjectAveragesPlugin::init()
     bool validity=checkValidity();
 
     getOutputDataset()->addAction(_settingsAction);
+
+    // Automatically focus on the settings action
+    getOutputDataset<Points>()->_infoAction->collapse();
     
 }
 
