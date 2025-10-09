@@ -202,7 +202,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
 
     std::vector<float> averagesForSelectedDimension;
     averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension); 
-    qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
+    //qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
     const int numPoints = _positionDataset->getNumPoints();
 
