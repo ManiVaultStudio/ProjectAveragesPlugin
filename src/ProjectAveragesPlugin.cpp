@@ -226,7 +226,6 @@ void ProjectAveragesPlugin::precomputeForAverages()
 
 void ProjectAveragesPlugin::mapAveragesToScalars()
 {
-
     Dataset<Points> averageDataset = _settingsAction.getAverageDatasetPickerAction().getCurrentDataset();
     if (!averageDataset.isValid())
     {
@@ -260,6 +259,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     datasetTask.setRunning();
 
     datasetTask.setProgress(0.0f);
+
 
     // store the labels of average dataset in  a vector
     //_labelsInAverages.resize(averageDataset->getNumPoints());
@@ -318,18 +318,29 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     // then if dimension changes
     // loop over _cellLabels, and for each cell, get the row index from _clusterAliasToRowMap, and then get the value from averagesForSelectedDimension
 
+    auto start1 = std::chrono::high_resolution_clock::now();
+
     const int numPoints = _positionDataset->getNumPoints();
-    _mappedScalars.resize(numPoints, 0.0f);
+    
     std::vector<float> averagesForSelectedDimension;
     averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension);
     qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
+    auto end1 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+    qDebug() << "1 in mapAveragesToScalars took " << elapsed1.count() << " ms";
+
+    auto start2 = std::chrono::high_resolution_clock::now();
+    _mappedScalars.resize(numPoints, 0.0f);
 #pragma omp parallel for
     for (int i = 0; i < numPoints; ++i)
     {
         QString label = _clusterLabelsForEachSpatialCell[i]; // Get the cluster alias label name of the cell
         _mappedScalars[i] = averagesForSelectedDimension[_clusterAliasToRowMap[label]];// FIXME: what if label not found?
     }
+    auto end2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+    qDebug() << "2 in mapAveragesToScalars took " << elapsed2.count() << " ms";
 
 
     QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
@@ -338,14 +349,27 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         geneName = "Dim" + QString::number(averageDatasetSelectedDimension);
 	}
 
+    auto end3 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed3 = end3 - end2;
+    qDebug() << "3 in mapAveragesToScalars took " << elapsed3.count() << " ms";
+
     // Update the output dataset with the mapped scalars
     getOutputDataset<Points>()->setData<float>(_mappedScalars.data(), _mappedScalars.size(), 1);
     events().notifyDatasetDataChanged(getOutputDataset<Points>());
     getOutputDataset<Points>()->setDimensionNames({ geneName });
 	events().notifyDatasetDataDimensionsChanged(getOutputDataset<Points>());
+
+    auto end4 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed4 = end4 - end3;
+    qDebug() << "4 in mapAveragesToScalars took " << elapsed4.count() << " ms";
+
     datasetTask.setProgressDescription("Finalizing");
     datasetTask.setProgress(100.0f);
     datasetTask.setFinished();
+
+    auto end5 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed5 = end5 - end4;
+    qDebug() << "5 in mapAveragesToScalars took " << elapsed5.count() << " ms";
 }
 
 
