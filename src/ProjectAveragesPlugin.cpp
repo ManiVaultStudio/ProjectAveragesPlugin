@@ -28,18 +28,6 @@ void ProjectAveragesPlugin::init()
     {
         setOutputDataset(Dataset<Points>(mv::data().createDerivedDataset("Mapped dataset", getInputDataset(), getInputDataset())));
     }
-    
-
-	/*auto positionDatasetChildren = _positionDataset->getChildren();
-    Datasets validChildren;
-    for (const auto& child : positionDatasetChildren)
-    {
-        if (child->getDataType() == ClusterType)
-        {
-            validChildren.append(child);
-        }
-	}
-	_settingsAction.getPositionClusterDatasetPickerAction().setDatasets(validChildren);*/
 
     const auto triggerUpdate = [this]() {triggerMapping(); };
     connect(&_settingsAction.getUpdateTriggerAction(), &TriggerAction::triggered, this, triggerUpdate);
@@ -145,11 +133,7 @@ void ProjectAveragesPlugin::triggerMapping()
     }
     else
     {
-        auto start1 = std::chrono::high_resolution_clock::now();
         mapAveragesToScalars();
-        auto end1 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-        qDebug() << "Mapping in ProjectAverages took " << elapsed1.count() << " ms";
     }
 }
 
@@ -229,8 +213,8 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     Dataset<Points> averageDataset = _settingsAction.getAverageDatasetPickerAction().getCurrentDataset();
     if (!averageDataset.isValid())
     {
-                qDebug() << "Average dataset is not set or invalid";
-				return;
+        qDebug() << "Average dataset is not set or invalid";
+        return;
     }
     Dataset<Clusters> labelDatasetForAverages = _settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset();
     if (!labelDatasetForAverages.isValid())
@@ -253,82 +237,15 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
 	}
 
     auto& datasetTask = getOutputDataset()->getTask();
-
     datasetTask.setName("Mapping averages");
-
     datasetTask.setRunning();
-
     datasetTask.setProgress(0.0f);
-
-
-    // store the labels of average dataset in  a vector
-    //_labelsInAverages.resize(averageDataset->getNumPoints());
-
-    //const QVector<Cluster>& labelClustersInAverages = labelDatasetForAverages->getClusters();
-    //for (int i = 0; i < labelClustersInAverages.size(); ++i)
-    //{
-    //    const auto& cluster = labelClustersInAverages[i];
-    //    const auto ptIndices = cluster.getIndices();
-    //    for (int ptIndex : ptIndices)
-    //    {
-    //        _labelsInAverages[ptIndex] = cluster.getName();
-    //    }
-    //}
-    //_mappedScalars.resize(_positionDataset->getNumPoints(), 0.0f);
-
-    //std::vector<float> averagesForSelectedDimension;
-    //averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension); 
-    ////qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
-
-    //const int numPoints = _positionDataset->getNumPoints();
-
-    //// Iterate over the points in the position dataset
-    //const QVector<Cluster>& labelClusters = labelDataset->getClusters();
-
-    //for (int i = 0; i < averagesForSelectedDimension.size(); ++i) {
-
-    //    QString clusterNameInAverage = _labelsInAverages[i];
-
-    //    bool found = false;
-
-    //    //search for the cluster name in labelClusters
-    //    for (const auto& cluster : labelClusters) {
-
-    //        QString clusterNameInEmbedding = cluster.getName();
-
-    //        if (clusterNameInAverage == clusterNameInEmbedding) 
-    //        {
-    //            const auto& ptIndices = cluster.getIndices();
-    //            for (int j = 0; j < ptIndices.size(); ++j) {
-    //                int ptIndex = ptIndices[j];
-    //                if (ptIndex >= 0 && ptIndex < _mappedScalars.size()) {
-    //                    _mappedScalars[ptIndex] = averagesForSelectedDimension[i];
-    //                }
-    //            }
-    //            found = true;
-    //            break;
-    //        }
-    //    }
-    //}
-
-    // optimize
-    // first in the event of dataset change
-    // compute the _clusterAliasToRowMap, which is a unorderedMap<QString, int>, mapping cluster name to the row index in average dataset
-    // compute _cellLabels for each cell in spatial dataset, which is a std::vector<QString>
-    // then if dimension changes
-    // loop over _cellLabels, and for each cell, get the row index from _clusterAliasToRowMap, and then get the value from averagesForSelectedDimension
-
-    auto start1 = std::chrono::high_resolution_clock::now();
 
     const int numPoints = _positionDataset->getNumPoints();
     
     std::vector<float> averagesForSelectedDimension;
     averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension);
-    qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
-
-    auto end1 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-    qDebug() << "1 in mapAveragesToScalars took " << elapsed1.count() << " ms";
+    //qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
     auto start2 = std::chrono::high_resolution_clock::now();
     _mappedScalars.resize(numPoints, 0.0f);
@@ -338,10 +255,6 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         QString label = _clusterLabelsForEachSpatialCell[i]; // Get the cluster alias label name of the cell
         _mappedScalars[i] = averagesForSelectedDimension[_clusterAliasToRowMap[label]];// FIXME: what if label not found?
     }
-    auto end2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-    qDebug() << "2 in mapAveragesToScalars took " << elapsed2.count() << " ms";
-
 
     QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
     if (geneName.isEmpty())
@@ -349,27 +262,15 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         geneName = "Dim" + QString::number(averageDatasetSelectedDimension);
 	}
 
-    auto end3 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed3 = end3 - end2;
-    qDebug() << "3 in mapAveragesToScalars took " << elapsed3.count() << " ms";
-
     // Update the output dataset with the mapped scalars
     getOutputDataset<Points>()->setData<float>(_mappedScalars.data(), _mappedScalars.size(), 1);
     events().notifyDatasetDataChanged(getOutputDataset<Points>());
     getOutputDataset<Points>()->setDimensionNames({ geneName });
 	events().notifyDatasetDataDimensionsChanged(getOutputDataset<Points>());
 
-    auto end4 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed4 = end4 - end3;
-    qDebug() << "4 in mapAveragesToScalars took " << elapsed4.count() << " ms";
-
     datasetTask.setProgressDescription("Finalizing");
     datasetTask.setProgress(100.0f);
     datasetTask.setFinished();
-
-    auto end5 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed5 = end5 - end4;
-    qDebug() << "5 in mapAveragesToScalars took " << elapsed5.count() << " ms";
 }
 
 

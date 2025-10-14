@@ -74,7 +74,6 @@ private:
     SettingsAction      _settingsAction;    /** The place where settings are stored (more info in SettingsAction.h) */
     std::vector<float>  _mappedScalars; 
     Dataset<Points> _positionDataset;
-    std::vector<QString> _labelsInAverages; // same order as the average rows
 
     std::unordered_map<QString, int> _clusterAliasToRowMap;// map cluster name to the row index in average dataset
     std::vector<QString> _clusterLabelsForEachSpatialCell; // same order as the spatial dataset
