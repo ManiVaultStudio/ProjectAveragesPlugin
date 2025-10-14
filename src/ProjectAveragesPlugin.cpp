@@ -46,7 +46,9 @@ void ProjectAveragesPlugin::init()
 
 
     const auto updateAverageDatasetPickerAction = [this]() {
-        
+        qDebug() << "Average dataset changed, precomputing...";
+        precomputeForAverages();
+      
         if (_settingsAction.getAverageDatasetPickerAction().getCurrentDataset().isValid())
         {
 			_settingsAction.getAveragesPointDatasetDimensionsPickerAction().setPointsDataset(_settingsAction.getAverageDatasetPickerAction().getCurrentDataset());
@@ -67,6 +69,9 @@ void ProjectAveragesPlugin::init()
     connect(&_settingsAction.getAverageDatasetPickerAction(), &DatasetPickerAction::currentIndexChanged, this, updateAverageDatasetPickerAction);
 
     const auto updateAveragesClusterDatasetPickerAction = [this]() {
+        qDebug() << "Averages cluster dataset changed, precomputing...";
+        precomputeForAverages();
+
         bool validity = checkValidity();
         if (validity)
         {
@@ -80,6 +85,9 @@ void ProjectAveragesPlugin::init()
     connect(&_settingsAction.getAveragesClusterDatasetPickerAction(), &DatasetPickerAction::currentIndexChanged, this, updateAveragesClusterDatasetPickerAction);
 
     const auto updatePositionClusterDatasetPickerAction = [this]() {
+        qDebug() << "Position cluster dataset changed, precomputing...";
+        precomputeForSpatial();
+
         bool validity = checkValidity();
         if (validity)
         {
@@ -137,8 +145,83 @@ void ProjectAveragesPlugin::triggerMapping()
     }
     else
     {
+        auto start1 = std::chrono::high_resolution_clock::now();
         mapAveragesToScalars();
+        auto end1 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+        qDebug() << "Mapping in ProjectAverages took " << elapsed1.count() << " ms";
     }
+}
+
+void ProjectAveragesPlugin::precomputeForSpatial()
+{
+    Dataset<Clusters> labelDatasetForSpatial = _settingsAction.getPositionClusterDatasetPickerAction().getCurrentDataset();
+    if (!labelDatasetForSpatial.isValid())
+    {
+        qDebug() << "Label dataset for positions is not set or invalid";
+        return;
+    }
+
+    if (!_positionDataset.isValid())
+    {
+        qDebug() << "Position dataset is not set or invalid";
+        return;
+    }
+
+    const int numPoints = _positionDataset->getNumPoints();
+
+    // precompute the cell-label array
+    _clusterLabelsForEachSpatialCell.clear();
+    _clusterLabelsForEachSpatialCell.resize(numPoints);
+    
+    const QVector<Cluster>& spatialLabelClusters = labelDatasetForSpatial->getClusters();
+    for (const auto& cluster : spatialLabelClusters) {
+        QString clusterNameInEmbedding = cluster.getName();
+        const auto& ptIndices = cluster.getIndices();
+        for (int j = 0; j < ptIndices.size(); ++j) {
+            int ptIndex = ptIndices[j];
+            if (ptIndex >= 0 && ptIndex < _clusterLabelsForEachSpatialCell.size()) {
+                _clusterLabelsForEachSpatialCell[ptIndex] = clusterNameInEmbedding;
+            }
+            else {
+                qDebug() << "ERROR! precomputeForMapping() ptIndex out of bounds";// should not happen
+            }
+        }
+    }
+
+}
+
+void ProjectAveragesPlugin::precomputeForAverages()
+{
+    Dataset<Points> averageDataset = _settingsAction.getAverageDatasetPickerAction().getCurrentDataset();
+    if (!averageDataset.isValid())
+    {
+        qDebug() << "Average dataset is not set or invalid";
+        return;
+    }
+    Dataset<Clusters> labelDatasetForAverages = _settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset();
+    if (!labelDatasetForAverages.isValid())
+    {
+        qDebug() << "Label dataset for averages is not set or invalid";
+        return;
+    }
+
+    // precompute the cluster name to row index map
+    _clusterAliasToRowMap.clear();
+
+    const QVector<Cluster>& labelClustersInAverages = labelDatasetForAverages->getClusters();
+    for (int i = 0; i < labelClustersInAverages.size(); ++i)
+    {
+        QString clusterName = labelClustersInAverages[i].getName();
+        const auto& ptIndices = labelClustersInAverages[i].getIndices();
+        if (ptIndices.size() == 1)
+            _clusterAliasToRowMap[clusterName] = ptIndices[0];
+        else
+        {
+            qDebug() << "ERROR! precomputeForMapping() ptIndices.size() != 1";// should not happen
+        }
+    }
+
 }
 
 void ProjectAveragesPlugin::mapAveragesToScalars()
@@ -170,78 +253,85 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         return;
 	}
 
-
     auto& datasetTask = getOutputDataset()->getTask();
-
 
     datasetTask.setName("Mapping averages");
 
-
     datasetTask.setRunning();
-
 
     datasetTask.setProgress(0.0f);
 
-
-
     // store the labels of average dataset in  a vector
-    _labelsInAverages.resize(averageDataset->getNumPoints());
+    //_labelsInAverages.resize(averageDataset->getNumPoints());
 
+    //const QVector<Cluster>& labelClustersInAverages = labelDatasetForAverages->getClusters();
+    //for (int i = 0; i < labelClustersInAverages.size(); ++i)
+    //{
+    //    const auto& cluster = labelClustersInAverages[i];
+    //    const auto ptIndices = cluster.getIndices();
+    //    for (int ptIndex : ptIndices)
+    //    {
+    //        _labelsInAverages[ptIndex] = cluster.getName();
+    //    }
+    //}
+    //_mappedScalars.resize(_positionDataset->getNumPoints(), 0.0f);
 
-    const QVector<Cluster>& labelClustersInAverages = labelDatasetForAverages->getClusters();
-    for (int i = 0; i < labelClustersInAverages.size(); ++i)
-    {
-        const auto& cluster = labelClustersInAverages[i];
-        const auto ptIndices = cluster.getIndices();
-        for (int ptIndex : ptIndices)
-        {
-            _labelsInAverages[ptIndex] = cluster.getName();
-        }
-    }
-    _mappedScalars.resize(_positionDataset->getNumPoints(), 0.0f);
+    //std::vector<float> averagesForSelectedDimension;
+    //averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension); 
+    ////qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
-    std::vector<float> averagesForSelectedDimension;
-    averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension); 
-    //qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
+    //const int numPoints = _positionDataset->getNumPoints();
+
+    //// Iterate over the points in the position dataset
+    //const QVector<Cluster>& labelClusters = labelDataset->getClusters();
+
+    //for (int i = 0; i < averagesForSelectedDimension.size(); ++i) {
+
+    //    QString clusterNameInAverage = _labelsInAverages[i];
+
+    //    bool found = false;
+
+    //    //search for the cluster name in labelClusters
+    //    for (const auto& cluster : labelClusters) {
+
+    //        QString clusterNameInEmbedding = cluster.getName();
+
+    //        if (clusterNameInAverage == clusterNameInEmbedding) 
+    //        {
+    //            const auto& ptIndices = cluster.getIndices();
+    //            for (int j = 0; j < ptIndices.size(); ++j) {
+    //                int ptIndex = ptIndices[j];
+    //                if (ptIndex >= 0 && ptIndex < _mappedScalars.size()) {
+    //                    _mappedScalars[ptIndex] = averagesForSelectedDimension[i];
+    //                }
+    //            }
+    //            found = true;
+    //            break;
+    //        }
+    //    }
+    //}
+
+    // optimize
+    // first in the event of dataset change
+    // compute the _clusterAliasToRowMap, which is a unorderedMap<QString, int>, mapping cluster name to the row index in average dataset
+    // compute _cellLabels for each cell in spatial dataset, which is a std::vector<QString>
+    // then if dimension changes
+    // loop over _cellLabels, and for each cell, get the row index from _clusterAliasToRowMap, and then get the value from averagesForSelectedDimension
 
     const int numPoints = _positionDataset->getNumPoints();
+    _mappedScalars.resize(numPoints, 0.0f);
+    std::vector<float> averagesForSelectedDimension;
+    averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension);
+    qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
-    // Iterate over the points in the position dataset
-    const QVector<Cluster>& labelClusters = labelDataset->getClusters();
-
-    for (int i = 0; i < averagesForSelectedDimension.size(); ++i) {
-
-        QString clusterNameInAverage = _labelsInAverages[i];
-        //qDebug() << "clusterNameInAverage: " << clusterNameInAverage;
-
-        // hard-coded to remove "cluster_" prefix in clusterName TODO: generalize this
-        /*if (clusterNameInAverage.startsWith("cluster_")) {
-            clusterNameInAverage = clusterNameInAverage.mid(8);
-        }*/
-
-        bool found = false;
-
-        //search for the cluster name in labelClusters
-        for (const auto& cluster : labelClusters) {
-
-            QString clusterNameInEmbedding = cluster.getName();
-
-            //qDebug() << "clusterNameInEmbedding: " << clusterNameInEmbedding;
-            //qDebug() << "Comparing: " << clusterNameInAverage << " vs " << clusterNameInEmbedding;
-            if (clusterNameInAverage == clusterNameInEmbedding) 
-            {
-                const auto& ptIndices = cluster.getIndices();
-                for (int j = 0; j < ptIndices.size(); ++j) {
-                    int ptIndex = ptIndices[j];
-                    if (ptIndex >= 0 && ptIndex < _mappedScalars.size()) {
-                        _mappedScalars[ptIndex] = averagesForSelectedDimension[i];
-                    }
-                }
-                found = true;
-                break;
-            }
-        }
+#pragma omp parallel for
+    for (int i = 0; i < numPoints; ++i)
+    {
+        QString label = _clusterLabelsForEachSpatialCell[i]; // Get the cluster alias label name of the cell
+        _mappedScalars[i] = averagesForSelectedDimension[_clusterAliasToRowMap[label]];// FIXME: what if label not found?
     }
+
+
     QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
     if (geneName.isEmpty())
     {

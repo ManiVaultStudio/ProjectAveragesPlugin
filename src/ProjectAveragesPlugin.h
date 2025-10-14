@@ -13,6 +13,8 @@
 #include <QRandomGenerator>
 #include <QtMath>
 
+#include <unordered_map>
+
 /** All plugin related classes are in the ManiVault plugin namespace */
 using namespace mv::plugin;
 
@@ -46,6 +48,9 @@ public:
     void mapAveragesToScalars();
     bool checkValidity();
     void triggerMapping();
+
+    void precomputeForSpatial(); // precompute things needed for spatial
+    void precomputeForAverages(); // precompute things needed for averaging
     /**
      * Invoked when a points data event occurs
      * @param dataEvent Data event which occurred
@@ -70,6 +75,9 @@ private:
     std::vector<float>  _mappedScalars; 
     Dataset<Points> _positionDataset;
     std::vector<QString> _labelsInAverages; // same order as the average rows
+
+    std::unordered_map<QString, int> _clusterAliasToRowMap;// map cluster name to the row index in average dataset
+    std::vector<QString> _clusterLabelsForEachSpatialCell; // same order as the spatial dataset
 };
 
 /**
