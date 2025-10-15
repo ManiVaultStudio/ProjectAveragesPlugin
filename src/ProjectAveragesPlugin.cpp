@@ -92,6 +92,7 @@ void ProjectAveragesPlugin::init()
         bool validity = checkValidity();
         if (validity)
         {
+            //qDebug() << "Averages point dataset dimension changed" << _settingsAction.getAverageDatasetPickerAction().getCurrentDataset()->getGuiName();
             if (_settingsAction.getAutoUpdateAction().isChecked())
             {
                 triggerMapping();
@@ -232,7 +233,8 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     int averageDatasetSelectedDimension = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionIndex();
     if (averageDatasetSelectedDimension < 0 || averageDatasetSelectedDimension >= averageDataset->getNumDimensions())
     {
-        qDebug() << "Selected dimension index is out of bounds for the average dataset";
+        qDebug() << "Selected dimension index " << averageDatasetSelectedDimension << "is out of bounds for the average dataset";
+        qDebug() << averageDataset->getGuiName();
         return;
 	}
 
