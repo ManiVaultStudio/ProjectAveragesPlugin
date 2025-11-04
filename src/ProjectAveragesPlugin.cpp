@@ -195,7 +195,14 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         const auto ptIndices = cluster.getIndices();
         for (int ptIndex : ptIndices)
         {
-            _labelsInAverages[ptIndex] = cluster.getName();
+            if (ptIndex >= 0 && ptIndex < static_cast<int>(_labelsInAverages.size())) {
+                _labelsInAverages[ptIndex] = cluster.getName();
+            }
+            else {
+                
+                qCritical() << "ptIndex out of bounds:" << ptIndex << "for cluster" << cluster.getName() <<"Check cluster data set and try again";
+                return;
+            }
         }
     }
     _mappedScalars.resize(_positionDataset->getNumPoints(), 0.0f);
