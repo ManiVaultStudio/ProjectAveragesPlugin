@@ -14,7 +14,8 @@ using namespace mv::plugin;
 
 
 ProjectAveragesPlugin::ProjectAveragesPlugin(const PluginFactory* factory) :
-    AnalysisPlugin(factory)
+    AnalysisPlugin(factory),
+    _settingsAction(this)
 {
 }
 
@@ -147,8 +148,8 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     Dataset<Points> averageDataset = _settingsAction.getAverageDatasetPickerAction().getCurrentDataset();
     if (!averageDataset.isValid())
     {
-                qDebug() << "Average dataset is not set or invalid";
-				return;
+        qDebug() << "Average dataset is not set or invalid";
+        return;
     }
     Dataset<Clusters> labelDatasetForAverages = _settingsAction.getAveragesClusterDatasetPickerAction().getCurrentDataset();
     if (!labelDatasetForAverages.isValid())
@@ -168,7 +169,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     {
         qDebug() << "Selected dimension index is out of bounds for the average dataset";
         return;
-	}
+    }
 
 
     auto& datasetTask = getOutputDataset()->getTask();
@@ -199,8 +200,8 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
                 _labelsInAverages[ptIndex] = cluster.getName();
             }
             else {
-                
-                qCritical() << "ptIndex out of bounds:" << ptIndex << "for cluster" << cluster.getName() <<"Check cluster data set and try again";
+
+                qCritical() << "ptIndex out of bounds:" << ptIndex << "for cluster" << cluster.getName() << "Check cluster data set and try again";
                 return;
             }
         }
@@ -208,7 +209,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     _mappedScalars.resize(_positionDataset->getNumPoints(), 0.0f);
 
     std::vector<float> averagesForSelectedDimension;
-    averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension); 
+    averageDataset->extractDataForDimension(averagesForSelectedDimension, averageDatasetSelectedDimension);
     //qDebug() << "test dim " << averageDataset->getDimensionNames()[averageDatasetSelectedDimension];
 
     const int numPoints = _positionDataset->getNumPoints();
@@ -235,7 +236,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
 
             //qDebug() << "clusterNameInEmbedding: " << clusterNameInEmbedding;
             //qDebug() << "Comparing: " << clusterNameInAverage << " vs " << clusterNameInEmbedding;
-            if (clusterNameInAverage == clusterNameInEmbedding) 
+            if (clusterNameInAverage == clusterNameInEmbedding)
             {
                 const auto& ptIndices = cluster.getIndices();
                 for (int j = 0; j < ptIndices.size(); ++j) {
@@ -253,11 +254,47 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     if (geneName.isEmpty())
     {
         geneName = "Dim" + QString::number(averageDatasetSelectedDimension);
-	}
+    }
+
+    // TEMP code: output the mapped scalars as csv
+    //if (geneName == "chr4:135137386-135137887" || geneName == "chr4:135137891-135138392"
+    //    || geneName == "chr4:135119184-135119685" || geneName == "chr4:134932591-134933092")
+    //{
+    //    qDebug() << "Found " << geneName;
+
+    //    QString folderPath = "D:/TEMPPEAKS/";
+
+    //    QString safeFileName = geneName;
+    //    safeFileName.replace(":", "_"); // Changes "chr4:135..." to "chr4_135..."
+
+    //    QString fullPath = folderPath + safeFileName + ".csv";
+
+    //    QFile file(fullPath);
+
+    //    // Check if the file successfully opens
+    //    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    //    {
+    //        QTextStream out(&file);
+
+    //        out << geneName << "\n";
+
+    //        for (float value : _mappedScalars) {
+    //            out << value << "\n";
+    //        }
+
+    //        file.close();
+
+    //        qDebug() << "Successfully saved to:" << fullPath;
+    //    }
+    //   
+    //}
+    
+
 
     // Update the output dataset with the mapped scalars
     getOutputDataset<Points>()->setData<float>(_mappedScalars.data(), _mappedScalars.size(), 1);
     events().notifyDatasetDataChanged(getOutputDataset<Points>());
+
     getOutputDataset<Points>()->setDimensionNames({ geneName });
 	events().notifyDatasetDataDimensionsChanged(getOutputDataset<Points>());
     datasetTask.setProgressDescription("Finalizing");
