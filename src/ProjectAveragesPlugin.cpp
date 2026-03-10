@@ -339,7 +339,7 @@ void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 
 void ProjectAveragesPlugin::exportMappedScalarsToCSV()
 {
-    qDebug() << "exportMappedScalarsToCSV()";
+    //qDebug() << "exportMappedScalarsToCSV()";
 
     if (_mappedScalars.size() == 0)
     {
@@ -348,13 +348,13 @@ void ProjectAveragesPlugin::exportMappedScalarsToCSV()
     }
 
     QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
-    qDebug() << "Export " << geneName;
+    //qDebug() << "Export " << geneName;
 
     // get cell labels
     QVariantList parentSampleNameList;
     if (_positionDataset.isValid() && _positionDataset->hasProperty("Sample Names"))
     {
-        qDebug() << "PositionDataset->getGuiName() " << _positionDataset->getGuiName();
+        //qDebug() << "PositionDataset->getGuiName() " << _positionDataset->getGuiName();
         parentSampleNameList = _positionDataset->getProperty("Sample Names").toList();
     }
 
