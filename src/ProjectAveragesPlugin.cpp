@@ -257,37 +257,64 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     }
 
     // TEMP code: output the mapped scalars as csv
-    //if (geneName == "chr4:135137386-135137887" || geneName == "chr4:135137891-135138392"
-    //    || geneName == "chr4:135119184-135119685" || geneName == "chr4:134932591-134933092")
-    //{
-    //    qDebug() << "Found " << geneName;
+    if (_positionDataset->getNumPoints() == 5580065) // hard-coded to make sure it is on spatial
+    {
+        qDebug() << "spatial data";
+        if (geneName == "chr4:135137386-135137887" || geneName == "chr4:135137891-135138392"
+            || geneName == "chr4:135119184-135119685" || geneName == "chr4:134932591-134933092")
+        {
+            qDebug() << "Found " << geneName;
 
-    //    QString folderPath = "D:/TEMPPEAKS/";
+            // get cell labels
+            QVariantList parentSampleNameList;
+            if (_positionDataset.isValid() && _positionDataset->hasProperty("Sample Names"))
+            {
+                qDebug() << "PositionDataset->getGuiName() " << _positionDataset->getGuiName();
+                parentSampleNameList = _positionDataset->getProperty("Sample Names").toList();
+            }
 
-    //    QString safeFileName = geneName;
-    //    safeFileName.replace(":", "_"); // Changes "chr4:135..." to "chr4_135..."
+            QString folderPath = "D:/TEMPPEAKS/";
 
-    //    QString fullPath = folderPath + safeFileName + ".csv";
+            QString safeFileName = geneName;
+            safeFileName.replace(":", "_"); // Changes "chr4:135..." to "chr4_135..."
 
-    //    QFile file(fullPath);
+            QString fullPath = folderPath + safeFileName + ".csv";
 
-    //    // Check if the file successfully opens
-    //    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-    //    {
-    //        QTextStream out(&file);
+            QFile file(fullPath);
 
-    //        out << geneName << "\n";
+            // Check if the file successfully opens
+            if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+            {
+                QTextStream out(&file);
 
-    //        for (float value : _mappedScalars) {
-    //            out << value << "\n";
-    //        }
+                // Write CSV headers
+                out << "cell_label," << geneName << "\n";
 
-    //        file.close();
+                // Loop through the scalars using an index to match with the cell labels
+                for (int i = 0; i < _mappedScalars.size(); ++i)
+                {
+                    QString cellLabel = "Unknown";
 
-    //        qDebug() << "Successfully saved to:" << fullPath;
-    //    }
-    //   
-    //}
+                    // Safety check to ensure we don't go out of bounds
+                    if (i < parentSampleNameList.size()) {
+                        cellLabel = parentSampleNameList[i].toString();
+                    }
+
+                    out << cellLabel << "," << _mappedScalars[i] << "\n";
+                }
+
+                file.close();
+
+                qDebug() << "Successfully saved to:" << fullPath;
+            }
+            else
+            {
+                qDebug() << "Failed to open file for writing:" << fullPath;
+            }
+
+        }
+    }
+    
     
 
 
