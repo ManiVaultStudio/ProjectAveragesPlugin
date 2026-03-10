@@ -5,6 +5,7 @@
 
 #include <QtCore>
 #include <QDebug>
+#include <QFileDialog>
 
 Q_PLUGIN_METADATA(IID "studio.manivault.ProjectAveragesPlugin")
 
@@ -105,6 +106,11 @@ void ProjectAveragesPlugin::init()
         }
         };
     connect(&_settingsAction.getAveragesPointDatasetDimensionsPickerAction(), &DimensionPickerAction::currentDimensionIndexChanged, this, updateAveragesPointDatasetDimensionsPickerAction);
+
+    connect(&_settingsAction.getExportToCSVAction(), &TriggerAction::triggered, this, [this]() {
+        exportMappedScalarsToCSV();
+    });
+        
 
     bool validity=checkValidity();
 
@@ -257,63 +263,7 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     }
 
     // TEMP code: output the mapped scalars as csv
-    if (_positionDataset->getNumPoints() == 5580065) // hard-coded to make sure it is on spatial
-    {
-        qDebug() << "spatial data";
-        if (geneName == "chr4:135137386-135137887" || geneName == "chr4:135137891-135138392"
-            || geneName == "chr4:135119184-135119685" || geneName == "chr4:134932591-134933092")
-        {
-            qDebug() << "Found " << geneName;
-
-            // get cell labels
-            QVariantList parentSampleNameList;
-            if (_positionDataset.isValid() && _positionDataset->hasProperty("Sample Names"))
-            {
-                qDebug() << "PositionDataset->getGuiName() " << _positionDataset->getGuiName();
-                parentSampleNameList = _positionDataset->getProperty("Sample Names").toList();
-            }
-
-            QString folderPath = "D:/TEMPPEAKS/";
-
-            QString safeFileName = geneName;
-            safeFileName.replace(":", "_"); // Changes "chr4:135..." to "chr4_135..."
-
-            QString fullPath = folderPath + safeFileName + ".csv";
-
-            QFile file(fullPath);
-
-            // Check if the file successfully opens
-            if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-            {
-                QTextStream out(&file);
-
-                // Write CSV headers
-                out << "cell_label," << geneName << "\n";
-
-                // Loop through the scalars using an index to match with the cell labels
-                for (int i = 0; i < _mappedScalars.size(); ++i)
-                {
-                    QString cellLabel = "Unknown";
-
-                    // Safety check to ensure we don't go out of bounds
-                    if (i < parentSampleNameList.size()) {
-                        cellLabel = parentSampleNameList[i].toString();
-                    }
-
-                    out << cellLabel << "," << _mappedScalars[i] << "\n";
-                }
-
-                file.close();
-
-                qDebug() << "Successfully saved to:" << fullPath;
-            }
-            else
-            {
-                qDebug() << "Failed to open file for writing:" << fullPath;
-            }
-
-        }
-    }
+   
     
     
 
@@ -392,6 +342,73 @@ void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
         default:
             break;
     }
+}
+
+void ProjectAveragesPlugin::exportMappedScalarsToCSV()
+{
+    qDebug() << "exportMappedScalarsToCSV()";
+
+    QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
+    qDebug() << "Found " << geneName;
+
+    // get cell labels
+    QVariantList parentSampleNameList;
+    if (_positionDataset.isValid() && _positionDataset->hasProperty("Sample Names"))
+    {
+        qDebug() << "PositionDataset->getGuiName() " << _positionDataset->getGuiName();
+        parentSampleNameList = _positionDataset->getProperty("Sample Names").toList();
+    }
+
+    QString safeFileName = geneName;
+    safeFileName.replace(":", "_"); // Avoid :, changes "chr4:135..." to "chr4_135..."
+
+    QString defaultPathAndName = safeFileName + ".csv";
+
+    // save dialog
+    QString fullPath = QFileDialog::getSaveFileName(
+        nullptr,
+        QObject::tr("Save Mapped Scalars as CSV"), 
+        defaultPathAndName,  
+        QObject::tr("CSV Files (*.csv);;All Files (*)") // Filter so it saves as .csv
+    );
+
+    if (fullPath.isEmpty()) {
+        qDebug() << "Saving canceled." << geneName;
+        return; 
+    }
+
+    QFile file(fullPath);
+
+    // Check if the file successfully opens
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream out(&file);
+
+        // Write CSV headers
+        out << "cell_label," << geneName << "\n";
+
+        // Loop through the scalars using an index to match with the cell labels
+        for (int i = 0; i < _mappedScalars.size(); ++i)
+        {
+            QString cellLabel = "Unknown";
+
+            // Safety check to ensure we don't go out of bounds
+            if (i < parentSampleNameList.size()) {
+                cellLabel = parentSampleNameList[i].toString();
+            }
+
+            out << cellLabel << "," << _mappedScalars[i] << "\n";
+        }
+
+        file.close();
+
+        qDebug() << "Successfully saved to:" << fullPath;
+    }
+    else
+    {
+        qDebug() << "Failed to open file for writing:" << fullPath;
+    }
+
 }
 
 // =============================================================================

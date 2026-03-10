@@ -7,7 +7,8 @@ SettingsAction::SettingsAction(QObject* parent) :
 	_updateTriggerAction(this, "Update Trigger Action"),
 	_averagesClusterDatasetPickerAction(this, "Averages Cluster Dataset"),
 	_positionClusterDatasetPickerAction(this, "Position Cluster Dataset"),
-	_averagesPointDatasetDimensionsPickerAction(this, "Averages Dataset Dimension")
+	_averagesPointDatasetDimensionsPickerAction(this, "Averages Dataset Dimension"),
+    _exportToCSVAction(this, "Export")
     
 {
     setText("Settings");
@@ -35,12 +36,15 @@ SettingsAction::SettingsAction(QObject* parent) :
 	_autoUpdateAction.setToolTip("Enable or disable auto update of the averages points and clusters");
 	_updateTriggerAction.setToolTip("Trigger an update of the averages points and clusters manually");
 	_averagesPointDatasetDimensionsPickerAction.setToolTip("Select the dimensions for the averages point dataset");
+    _exportToCSVAction.setToolTip("Export the mapped values to csv");
+
     addAction(&_averageDatasetPickerAction);
 	addAction(&_averagesClusterDatasetPickerAction);
     addAction(&_positionClusterDatasetPickerAction);
 	addAction(&_averagesPointDatasetDimensionsPickerAction);
 	addAction(&_autoUpdateAction);
     addAction(&_updateTriggerAction);
+    addAction(&_exportToCSVAction);
 }
 
 

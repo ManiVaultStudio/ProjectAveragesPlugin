@@ -52,6 +52,8 @@ public:
      */
     void onDataEvent(mv::DatasetEvent* dataEvent);
 
+    void exportMappedScalarsToCSV();
+
 public: // Serialization
     /**
     * Load plugin from variant map

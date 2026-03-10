@@ -30,6 +30,7 @@ public: // Action getters
 	DatasetPickerAction& getPositionClusterDatasetPickerAction() { return _positionClusterDatasetPickerAction; } // Getter for position cluster dataset picker action
 	DimensionPickerAction& getAveragesPointDatasetDimensionsPickerAction() { return _averagesPointDatasetDimensionsPickerAction; } // Getter for averages point dataset dimensions picker action
 
+	TriggerAction& getExportToCSVAction() { return _exportToCSVAction; }
 public:
 	void fromVariantMap(const QVariantMap& variantMap) override;
 	QVariantMap toVariantMap() const override;
@@ -42,4 +43,6 @@ public:
 	DatasetPickerAction  _averagesClusterDatasetPickerAction; // Dataset picker for averages cluster dataset
 	DatasetPickerAction  _positionClusterDatasetPickerAction; // Dataset picker for position cluster dataset
 	DimensionPickerAction _averagesPointDatasetDimensionsPickerAction; // Dimension picker for averages point dataset dimensions
+
+	TriggerAction         _exportToCSVAction;
 };
