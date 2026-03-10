@@ -262,12 +262,6 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
         geneName = "Dim" + QString::number(averageDatasetSelectedDimension);
     }
 
-    // TEMP code: output the mapped scalars as csv
-   
-    
-    
-
-
     // Update the output dataset with the mapped scalars
     getOutputDataset<Points>()->setData<float>(_mappedScalars.data(), _mappedScalars.size(), 1);
     events().notifyDatasetDataChanged(getOutputDataset<Points>());
@@ -278,7 +272,6 @@ void ProjectAveragesPlugin::mapAveragesToScalars()
     datasetTask.setProgress(100.0f);
     datasetTask.setFinished();
 }
-
 
 void ProjectAveragesPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 {
@@ -348,8 +341,14 @@ void ProjectAveragesPlugin::exportMappedScalarsToCSV()
 {
     qDebug() << "exportMappedScalarsToCSV()";
 
+    if (_mappedScalars.size() == 0)
+    {
+        QMessageBox::warning(nullptr, "Warning", "No values imputed, impute a feature first.");
+        return;
+    }
+
     QString geneName = _settingsAction.getAveragesPointDatasetDimensionsPickerAction().getCurrentDimensionName();
-    qDebug() << "Found " << geneName;
+    qDebug() << "Export " << geneName;
 
     // get cell labels
     QVariantList parentSampleNameList;
@@ -387,12 +386,11 @@ void ProjectAveragesPlugin::exportMappedScalarsToCSV()
         // Write CSV headers
         out << "cell_label," << geneName << "\n";
 
-        // Loop through the scalars using an index to match with the cell labels
         for (int i = 0; i < _mappedScalars.size(); ++i)
         {
-            QString cellLabel = "Unknown";
+            QString cellLabel = "Unknown"; // in case no cellLabel
 
-            // Safety check to ensure we don't go out of bounds
+            // Safety check 
             if (i < parentSampleNameList.size()) {
                 cellLabel = parentSampleNameList[i].toString();
             }
