@@ -1,5 +1,7 @@
 #include "SettingsAction.h"
 
+using namespace mv;
+
 SettingsAction::SettingsAction(QObject* parent) :
     GroupAction(parent, "SettingsAction", true),
     _averageDatasetPickerAction(this,"Averages Point Dataset"),
