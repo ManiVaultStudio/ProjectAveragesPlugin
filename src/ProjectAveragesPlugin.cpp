@@ -1,6 +1,7 @@
 #include "ProjectAveragesPlugin.h"
 
 #include <event/Event.h>
+#include <util/Serialization.h>
 #include <PointData/InfoAction.h>
 
 #include <QtCore>
