@@ -7,6 +7,7 @@
 #include <QtCore>
 #include <QDebug>
 #include <QFileDialog>
+#include <QMessageBox>
 
 Q_PLUGIN_METADATA(IID "studio.manivault.ProjectAveragesPlugin")
 
