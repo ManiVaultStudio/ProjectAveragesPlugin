@@ -1,15 +1,16 @@
 #include "ProjectAveragesPlugin.h"
 
 #include <event/Event.h>
+#include <util/Serialization.h>
 #include <PointData/InfoAction.h>
+#include <PointData/DimensionsPickerAction.h>
 
 #include <QtCore>
 #include <QDebug>
 #include <QFileDialog>
+#include <QMessageBox>
 
-Q_PLUGIN_METADATA(IID "studio.manivault.ProjectAveragesPlugin")
-
-using namespace mv;
+Q_PLUGIN_METADATA(IID "studio.manivault.ProjectAveragesPlugin")using namespace mv;
 using namespace mv::plugin;
 
 
