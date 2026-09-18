@@ -428,8 +428,9 @@ void ProjectAveragesPlugin::computeAveragesFromScRNAseq()
     }
 
     const QVector<Cluster>& sourceClusters = scClusterDataset->getClusters();
-    const int numClusters = sourceClusters.size();
-    const int numGenes = scDataset->getNumDimensions();
+    const std::uint64_t numClusters = sourceClusters.size();
+    const std::uint64_t numGenes = scDataset->getNumDimensions();
+    const std::uint64_t numCells = scDataset->getNumPoints();
 
     if (numClusters == 0 || numGenes == 0)
     {
@@ -439,40 +440,53 @@ void ProjectAveragesPlugin::computeAveragesFromScRNAseq()
 
     qDebug() << "Computing averages from scRNAseq dataset with" << numClusters << "clusters and" << numGenes << "dimensions...";
 
-    // Prepare storage for averaged data: rows = clusters, cols = genes
-    std::vector<float> averages;
-    averages.resize(static_cast<std::size_t>(numClusters) * static_cast<std::size_t>(numGenes), 0.0f);
 
-    // For each gene (dimension) extract full column once and compute per-cluster averages.
+   // Precompute cluster counts and validate cluster indices
+    std::vector<std::uint64_t> clusterCounts(numClusters, 0);
+
+    for (std::uint64_t clusterIdx = 0; clusterIdx < numClusters; ++clusterIdx)
+    {
+        const auto& sourceIndices = sourceClusters[static_cast<int>(clusterIdx)].getIndices();
+
+        clusterCounts[clusterIdx] = sourceIndices.size();
+
+        for (auto idx : sourceIndices)
+        {
+            if (idx < 0 || static_cast<std::size_t>(idx) >= numCells)
+            {
+                qCritical() << "Index out of bounds while averaging scRNAseq:" << idx;
+                return;
+            }
+        }
+    }
+
+    // averaged data: rows = clusters, cols = genes
+    std::vector<float> averages(static_cast<std::size_t>(numClusters) * static_cast<std::size_t>(numGenes), 0.0f);
+
+    // compute per-cluster averages
+    std::vector<float> geneValues;
+
     for (std::uint64_t geneIdx = 0; geneIdx < numGenes; ++geneIdx)
     {
-        std::vector<float> geneValues;
-        scDataset->extractDataForDimension(geneValues, geneIdx);
+        geneValues.clear();
 
-        if (geneValues.empty())
-            continue;
+        scDataset->extractDataForDimension(geneValues, geneIdx);
 
         for (std::uint64_t clusterIdx = 0; clusterIdx < numClusters; ++clusterIdx)
         {
             const auto& indices = sourceClusters[clusterIdx].getIndices();
             double sum = 0.0;
-            std::size_t count = 0;
+            const std::uint64_t count = clusterCounts[clusterIdx];
+
+            if (count == 0)
+                continue;
 
             for (auto idx : indices)
             {
-                if (idx >= 0 && idx < static_cast<int>(geneValues.size()))
-                {
-                    sum += static_cast<double>(geneValues[static_cast<std::size_t>(idx)]);
-                    ++count;
-                }
-                else
-                {
-                    qCritical() << "Index out of bounds while averaging scRNAseq:" << idx;
-                }
+               sum += static_cast<double>(geneValues[static_cast<std::size_t>(idx)]);
             }
 
-            const float avg = (count > 0) ? static_cast<float>(sum / static_cast<double>(count)) : 0.0f;
-            averages[static_cast<std::size_t>(clusterIdx) * static_cast<std::size_t>(numGenes) + static_cast<std::size_t>(geneIdx)] = avg;
+            averages[clusterIdx * numGenes + geneIdx] = static_cast<float>(sum / static_cast<double>(count));
         }
     }
 
