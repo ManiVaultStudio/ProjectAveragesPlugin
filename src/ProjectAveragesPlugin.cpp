@@ -111,7 +111,10 @@ void ProjectAveragesPlugin::init()
     connect(&_settingsAction.getExportToCSVAction(), &TriggerAction::triggered, this, [this]() {
         exportMappedScalarsToCSV();
     });
-        
+
+    connect(&_settingsAction.getComputeAveragesFromScRNAseqAction(), &TriggerAction::triggered, this, [this]() {
+        computeAveragesFromScRNAseq();
+        });
 
     bool validity=checkValidity();
 
@@ -408,6 +411,135 @@ void ProjectAveragesPlugin::exportMappedScalarsToCSV()
         qDebug() << "Failed to open file for writing:" << fullPath;
     }
 
+}
+
+void ProjectAveragesPlugin::computeAveragesFromScRNAseq()
+{
+    // compute averages from scRNAseq data using the selected cluster dataset
+    // store in a new points dataset and generate a cluster dataset, add them data hierarchy
+    // set the computed dataset as the average dataset in the settings action
+    Dataset<Points> scDataset = _settingsAction.getScRNAseqDatasetPickerAction().getCurrentDataset();
+    Dataset<Clusters> scClusterDataset = _settingsAction.getScRNAseqClusterDatasetPickerAction().getCurrentDataset();
+
+    if (!scDataset.isValid() || !scClusterDataset.isValid())
+    {
+        qDebug() << "ScRNAseq dataset or cluster dataset is not set or invalid";
+        return;
+    }
+
+    const QVector<Cluster>& sourceClusters = scClusterDataset->getClusters();
+    const int numClusters = sourceClusters.size();
+    const int numGenes = scDataset->getNumDimensions();
+
+    if (numClusters == 0 || numGenes == 0)
+    {
+        qDebug() << "No clusters or no dimensions in scRNAseq dataset";
+        return;
+    }
+
+    qDebug() << "Computing averages from scRNAseq dataset with" << numClusters << "clusters and" << numGenes << "dimensions...";
+
+    // Prepare storage for averaged data: rows = clusters, cols = genes
+    std::vector<float> averages;
+    averages.resize(static_cast<std::size_t>(numClusters) * static_cast<std::size_t>(numGenes), 0.0f);
+
+    // For each gene (dimension) extract full column once and compute per-cluster averages.
+    for (std::uint64_t geneIdx = 0; geneIdx < numGenes; ++geneIdx)
+    {
+        std::vector<float> geneValues;
+        scDataset->extractDataForDimension(geneValues, geneIdx);
+
+        if (geneValues.empty())
+            continue;
+
+        for (std::uint64_t cellIdx = 0; cellIdx < numClusters; ++cellIdx)
+        {
+            const auto& indices = sourceClusters[cellIdx].getIndices();
+            double sum = 0.0;
+            std::size_t count = 0;
+
+            for (auto idx : indices)
+            {
+                if (idx >= 0 && idx < static_cast<int>(geneValues.size()))
+                {
+                    sum += static_cast<double>(geneValues[static_cast<std::size_t>(idx)]);
+                    ++count;
+                }
+                else
+                {
+                    qCritical() << "Index out of bounds while averaging scRNAseq:" << idx;
+                }
+            }
+
+            const float avg = (count > 0) ? static_cast<float>(sum / static_cast<double>(count)) : 0.0f;
+            averages[static_cast<std::size_t>(cellIdx) * static_cast<std::size_t>(numGenes) + static_cast<std::size_t>(geneIdx)] = avg;
+        }
+    }
+
+    // Create a points dataset to store cluster-averages (rows = clusters, cols = genes)
+    Dataset<Points> averagesDataset = Dataset<Points>(mv::data().createDataset("Points", "Averages from scRNAseq"));
+    if (!averagesDataset.isValid())
+    {
+        qCritical() << "Failed to create averages dataset";
+        return;
+    }
+
+    averagesDataset->setData<float>(averages.data(), static_cast<std::size_t>(numClusters), static_cast<std::size_t>(numGenes));
+
+    // Copy gene/dimension names if available, otherwise create generic names
+    std::vector<QString> geneNames;
+    if (scDataset->getDimensionNames().size() == static_cast<std::size_t>(numGenes))
+        geneNames = scDataset->getDimensionNames();
+    else
+    {
+        geneNames.resize(numGenes);
+        for (std::uint64_t i = 0; i < numGenes; ++i)
+            geneNames[i] = QString("Dim%1").arg(i);
+    }
+
+    averagesDataset->setDimensionNames(geneNames);
+    events().notifyDatasetDataChanged(averagesDataset);
+    events().notifyDatasetDataDimensionsChanged(averagesDataset);
+
+    // Create a clusters dataset describing the rows of the averages dataset.
+    // Each cluster corresponds to one averaged row -> cluster indices point to the single row index in the averages dataset.
+    Dataset<Clusters> averagesClusterDataset = Dataset<Clusters>(mv::data().createDataset("Cluster", "Averages clusters", averagesDataset));
+    if (!averagesClusterDataset.isValid())
+    {
+        qWarning() << "Failed to create averages cluster dataset. Averages dataset created without cluster metadata.";
+    }
+    else
+    {
+        // Clear existing clusters then add a cluster per averaged row using original cluster names
+        averagesClusterDataset->getClusters().clear();
+        for (std::uint64_t cellIdx = 0; cellIdx < numClusters; ++cellIdx)
+        {
+            Cluster newCluster;
+            newCluster.setName(sourceClusters[cellIdx].getName());
+
+            std::vector<std::uint32_t> idxVec;
+            idxVec.push_back(static_cast<std::uint32_t>(cellIdx));
+            newCluster.setIndices(idxVec);
+
+            averagesClusterDataset->addCluster(newCluster);
+        }
+
+        events().notifyDatasetDataChanged(averagesClusterDataset);
+    }
+
+    // Try to set the newly created averages dataset as the selected average dataset in the settings action.
+    // If not available, select the dataset from the GUI manually.
+    try
+    {
+        _settingsAction.getAverageDatasetPickerAction().setCurrentDataset(averagesDataset);
+        _settingsAction.getAveragesClusterDatasetPickerAction().setCurrentDataset(averagesClusterDataset);
+    }
+    catch (...)
+    {
+        qDebug() << "Could not set the newly created averages dataset as the selected average dataset. Please select it manually.";
+    }
+    
+    qDebug() << "Computed averages from scRNAseq: created dataset with" << numClusters << "rows and" << numGenes << "dimensions.";
 }
 
 // =============================================================================

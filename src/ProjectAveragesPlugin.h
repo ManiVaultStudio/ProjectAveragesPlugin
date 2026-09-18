@@ -54,6 +54,8 @@ public:
 
     void exportMappedScalarsToCSV();
 
+    void computeAveragesFromScRNAseq();
+
 public: // Serialization
     /**
     * Load plugin from variant map

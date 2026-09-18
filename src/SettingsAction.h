@@ -31,6 +31,13 @@ public: // Action getters
 	DimensionPickerAction& getAveragesPointDatasetDimensionsPickerAction() { return _averagesPointDatasetDimensionsPickerAction; } // Getter for averages point dataset dimensions picker action
 
 	TriggerAction& getExportToCSVAction() { return _exportToCSVAction; }
+
+	// Optional: compute averages from scRNAseq datasets
+    ToggleAction& getUseScRNAseqAction() { return _useScRNAseqAction; } // Getter for use scRNAseq toggle action
+    DatasetPickerAction& getScRNAseqDatasetPickerAction() { return _scRNAseqDatasetPickerAction; } // Getter for scRNAseq dataset picker action
+    DatasetPickerAction& getScRNAseqClusterDatasetPickerAction() { return _scRNAseqClusterDatasetPickerAction; } // Getter for scRNAseq cluster dataset picker action
+    TriggerAction& getComputeAveragesFromScRNAseqAction() { return _computeAveragesFromScRNAseqAction; } // Getter for compute averages from scRNAseq trigger action
+
 public:
 	void fromVariantMap(const QVariantMap& variantMap) override;
 	QVariantMap toVariantMap() const override;
@@ -45,4 +52,10 @@ public:
 	DimensionPickerAction _averagesPointDatasetDimensionsPickerAction; // Dimension picker for averages point dataset dimensions
 
 	TriggerAction         _exportToCSVAction;
+
+	// Optional: compute averages from scRNAseq datasets
+    ToggleAction         _useScRNAseqAction; // Toggle action for using scRNAseq datasets
+    DatasetPickerAction  _scRNAseqDatasetPickerAction; // Dataset picker for scRNAseq dataset
+    DatasetPickerAction  _scRNAseqClusterDatasetPickerAction; // Dataset picker for scRNAseq cluster dataset
+    TriggerAction         _computeAveragesFromScRNAseqAction; // Trigger action for computing averages from scRNAseq datasets
 };
