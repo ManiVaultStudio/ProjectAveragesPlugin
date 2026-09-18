@@ -452,9 +452,9 @@ void ProjectAveragesPlugin::computeAveragesFromScRNAseq()
         if (geneValues.empty())
             continue;
 
-        for (std::uint64_t cellIdx = 0; cellIdx < numClusters; ++cellIdx)
+        for (std::uint64_t clusterIdx = 0; clusterIdx < numClusters; ++clusterIdx)
         {
-            const auto& indices = sourceClusters[cellIdx].getIndices();
+            const auto& indices = sourceClusters[clusterIdx].getIndices();
             double sum = 0.0;
             std::size_t count = 0;
 
@@ -472,7 +472,7 @@ void ProjectAveragesPlugin::computeAveragesFromScRNAseq()
             }
 
             const float avg = (count > 0) ? static_cast<float>(sum / static_cast<double>(count)) : 0.0f;
-            averages[static_cast<std::size_t>(cellIdx) * static_cast<std::size_t>(numGenes) + static_cast<std::size_t>(geneIdx)] = avg;
+            averages[static_cast<std::size_t>(clusterIdx) * static_cast<std::size_t>(numGenes) + static_cast<std::size_t>(geneIdx)] = avg;
         }
     }
 
@@ -512,13 +512,13 @@ void ProjectAveragesPlugin::computeAveragesFromScRNAseq()
     {
         // Clear existing clusters then add a cluster per averaged row using original cluster names
         averagesClusterDataset->getClusters().clear();
-        for (std::uint64_t cellIdx = 0; cellIdx < numClusters; ++cellIdx)
+        for (std::uint64_t clusterIdx = 0; clusterIdx < numClusters; ++clusterIdx)
         {
             Cluster newCluster;
-            newCluster.setName(sourceClusters[cellIdx].getName());
+            newCluster.setName(sourceClusters[clusterIdx].getName());
 
             std::vector<std::uint32_t> idxVec;
-            idxVec.push_back(static_cast<std::uint32_t>(cellIdx));
+            idxVec.push_back(static_cast<std::uint32_t>(clusterIdx));
             newCluster.setIndices(idxVec);
 
             averagesClusterDataset->addCluster(newCluster);
